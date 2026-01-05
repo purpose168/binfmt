@@ -1,29 +1,70 @@
 #!/usr/bin/env sh
+
+# 设置 shell 选项
+# -e 遇到错误立即退出
+# -u 使用未定义的变量时报错
 set -eu
 
+# 使用 case 语句处理不同的命令参数
+# ${1:-} 表示第一个参数，如果未设置则为空字符串
 case ${1:-} in
+  # 无参数时的处理
   '')
+    # 加载工具函数脚本
+    # $(dirname $0) 获取当前脚本所在目录
+    # util 是工具函数脚本文件，包含构建相关的辅助函数
     . $(dirname $0)/util
+    
+    # 使用 BuildKit 构建并验证 vendor 依赖
+    # buildxCmd build 使用 BuildKit 构建命令
+    # --target validate 指定构建目标为 validate 阶段
+    # --file ./hack/dockerfiles/vendor.Dockerfile 指定 Dockerfile 路径
+    # . 指定构建上下文为当前目录
     buildxCmd build \
       --target validate \
       --file ./hack/dockerfiles/vendor.Dockerfile \
       .
     ;;
+  
+  # check 参数的处理
   check)
+    # 检查 go.mod、go.sum 和 vendor 目录的 Git 状态
+    # git status --porcelain 以简洁格式显示文件状态
+    # -- go.mod go.sum vendor 指定要检查的文件和目录
+    # 2>/dev/null 将错误输出重定向到 /dev/null，避免显示错误信息
     status="$(git status --porcelain -- go.mod go.sum vendor 2>/dev/null)"
+    
+    # 过滤掉已删除（D）、已添加（A）和重命名（R）的文件
+    # grep -v '^[RAD] ' 排除以 D、A 或 R 开头的行
+    # || true 确保即使 grep 没有匹配项也不会报错
     diffs=$(echo "$status" | grep -v '^[RAD] ' || true)
+    
+    # 检查是否有未提交的更改
+    # if [ "$diffs" ] 检查 diffs 变量是否非空
     if [ "$diffs" ]; then
+      # 输出错误信息到标准错误输出
+      # 使用 { ... } 将多个命令组合在一起
+      # >&2 将整个块的输出重定向到标准错误流
       {
+        # 关闭调试模式，避免显示 set +x 命令本身
         set +x
+        # 输出错误提示信息
         echo 'The result of "./hack/update-vendor" differs'
+        # 输出空行，增加可读性
         echo
+        # 输出有差异的文件列表
         echo "$diffs"
+        # 输出空行
         echo
+        # 输出修复建议
         echo 'Please vendor your package with "./hack/update-vendor"'
+        # 输出空行
         echo
       } >&2
+      # 以错误码 1 退出脚本
       exit 1
     fi
+    # 如果没有差异，输出成功信息
     echo 'Congratulations! All vendoring changes are done the right way.'
     ;;
 esac

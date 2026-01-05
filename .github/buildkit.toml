@@ -1,2 +1,7 @@
+# OCI（Open Container Initiative）工作器配置
+# BuildKit 使用 OCI 工作器来构建和运行容器
 [worker.oci]
+  # 最大并行度：设置同时运行的最大构建任务数
+  # 值为 4 表示最多可以同时执行 4 个构建任务
+  # 这个设置可以优化构建性能，避免资源过度消耗
   max-parallelism = 4

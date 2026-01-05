@@ -1,56 +1,90 @@
+# golangci-lint 运行配置
 run:
+  # 超时时间：设置 linter 运行的最大时间为 10 分钟
+  # 如果超过这个时间，linter 将被终止
   timeout: 10m
+  # 模块下载模式：使用 vendor 目录
+  # 这意味着 linter 将使用项目中的 vendor 目录中的依赖，而不是从网络下载
   modules-download-mode: vendor
-  # default uses Go version from the go.mod file, fallback on the env var
-  # `GOVERSION`, fallback on 1.17: https://golangci-lint.run/usage/configuration/#run-configuration
+  # Go 版本：指定使用的 Go 版本为 1.23
+  # 默认情况下使用 go.mod 文件中的版本，如果不存在则回退到环境变量 GOVERSION
+  # 参考文档：https://golangci-lint.run/usage/configuration/#run-configuration
   go: "1.23"
 
+
+# Linters 配置：定义启用的代码检查工具
 linters:
+  # 启用的 linters 列表
   enable:
-    - gofmt
-    - govet
-    - depguard
-    - goimports
-    - ineffassign
-    - misspell
-    - unused
-    - revive
-    - staticcheck
-    - typecheck
-    - nolintlint
+    - gofmt          # Go 代码格式化检查，确保代码符合标准格式
+    - govet          # Go 静态分析工具，检查常见的编程错误
+    - depguard       # 依赖保护，检查是否使用了不允许的包
+    - goimports      # 导入包管理，自动整理和优化 import 语句
+    - ineffassign    # 检查无效的赋值操作
+    - misspell       # 拼写检查，检测代码中的拼写错误
+    - unused         # 检查未使用的常量、变量、函数和类型
+    - revive         # Go 代码风格检查，提供快速、可配置的 linting
+    - staticcheck    # 静态分析工具，检查 bug、性能问题和样式问题
+    - typecheck      # 类型检查，验证类型正确性
+    - nolintlint     # 检查 //nolint 注释的使用是否合理
+  # 禁用所有默认启用的 linters
+  # 这样可以精确控制使用哪些 linters
   disable-all: true
 
+
+# Linters 设置：配置各个 linter 的具体参数
 linters-settings:
+  # depguard 配置：依赖保护规则
   depguard:
     rules:
+      # 主规则：应用于主代码包
       main:
+        # 禁止使用的包列表
         deny:
-          # The io/ioutil package has been deprecated.
-          # https://go.dev/doc/go1.16#ioutil
+          # 禁止使用 io/ioutil 包
+          # 该包已被弃用，应该使用 io 包中的替代函数
+          # 参考文档：https://go.dev/doc/go1.16#ioutil
           - pkg: "io/ioutil"
             desc: The io/ioutil package has been deprecated.
 
+
+# Issues 配置：控制问题报告的显示和过滤规则
 issues:
+  # 排除规则：定义哪些问题应该被忽略
   exclude-rules:
+    # 排除 revive linter 的 "stutters" 警告
+    # stutters 检查变量名和类型名是否重复（如 "foo foo"）
     - linters:
         - revive
       text: "stutters"
+    # 排除 revive linter 的 "empty-block" 警告
+    # empty-block 检查空的代码块
     - linters:
         - revive
       text: "empty-block"
+    # 排除 revive linter 的 "superfluous-else" 警告
+    # superfluous-else 检查不必要的 else 语句
     - linters:
         - revive
       text: "superfluous-else"
+    # 排除 revive linter 的 "unused-parameter" 警告
+    # unused-parameter 检查未使用的函数参数
     - linters:
         - revive
       text: "unused-parameter"
+    # 排除 revive linter 的 "redefines-builtin-id" 警告
+    # redefines-builtin-id 检查是否重新定义了内置标识符
     - linters:
         - revive
       text: "redefines-builtin-id"
+    # 排除 revive linter 的 "if-return" 警告
+    # if-return 检查可以简化的 if-return 语句
     - linters:
         - revive
       text: "if-return"
 
-  # show all
+  # 显示所有问题：不限制每个 linter 和相同问题的数量
+  # max-issues-per-linter: 0 表示不限制每个 linter 报告的问题数量
+  # max-same-issues: 0 表示不限制相同问题的报告数量
   max-issues-per-linter: 0
   max-same-issues: 0

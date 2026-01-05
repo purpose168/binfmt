@@ -1,96 +1,141 @@
+# 持续集成（CI）工作流名称
 name: ci
 
+# 并发控制：确保同一分支的旧工作流被取消
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# 工作流触发条件
 on:
+  # 定时触发：每6天执行一次（UTC时间8点）
   schedule:
     - cron: '0 8 */6 * *' # every 6 days
+  # 手动触发
   workflow_dispatch:
+  # 推送到 master 分支时触发
   push:
     branches:
       - master
+  # 创建或更新拉取请求时触发
   pull_request:
 
+# 环境变量定义
 env:
+  # 仓库标识符
   REPO_SLUG: tonistiigi/binfmt
+  # GitHub Actions 缓存作用域
   CACHE_GHA_SCOPE: binfmt
 
+
+# 定义工作流中的作业
 jobs:
+  # 准备作业：预热缓存
   prepare:
+    # 运行环境：Ubuntu 24.04
     runs-on: ubuntu-24.04
+    # 策略配置
     strategy:
+      # 不快速失败：允许其他任务继续运行
       fail-fast: false
+      # 矩阵配置：定义多个目标构建类型
       matrix:
         target:
-          - mainline
-          - buildkit
-          - desktop
+          - mainline    # 主线版本
+          - buildkit    # Buildkit 专用版本
+          - desktop     # 桌面环境版本
     steps:
+      # 步骤1：检出代码
       -
         name: Checkout
         uses: actions/checkout@v5
+      # 步骤2：暴露 GitHub 运行时环境
       -
         name: Expose GitHub Runtime
         uses: crazy-max/ghaction-github-runtime@v3
+      # 步骤3：设置 Docker Buildx
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      # 步骤4：预热缓存
       -
         name: Warm cache
         run: |
           ./hack/warm-cache ${{ matrix.target }}
         env:
+          # 从 GitHub Actions 缓存加载
           CACHE_FROM: type=gha,scope=${{ env.CACHE_GHA_SCOPE }}-${{ matrix.target }}
+          # 保存到 GitHub Actions 缓存
           CACHE_TO: type=gha,scope=${{ env.CACHE_GHA_SCOPE }}-${{ matrix.target }}
 
+
+  # 验证作业：运行代码检查和测试
   validate:
+    # 运行环境：Ubuntu 24.04
     runs-on: ubuntu-24.04
+    # 依赖：必须在 prepare 作业完成后才能运行
     needs:
       - prepare
+    # 策略配置
     strategy:
+      # 不快速失败
       fail-fast: false
+      # 矩阵配置：定义多个验证脚本
       matrix:
         script:
-          - ./hack/lint
-          - ./hack/validate-vendor
-          - ./hack/install-and-test
+          - ./hack/lint              # 代码风格检查
+          - ./hack/validate-vendor   # 验证 vendor 依赖
+          - ./hack/install-and-test  # 安装并运行测试
     steps:
+      # 步骤1：检出代码
       -
         name: Checkout
         uses: actions/checkout@v5
+      # 步骤2：暴露 GitHub 运行时环境
       -
         name: Expose GitHub Runtime
         uses: crazy-max/ghaction-github-runtime@v3
+      # 步骤3：设置 Docker Buildx
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      # 步骤4：运行验证脚本
       -
         name: Run
         run: |
           ${{ matrix.script }}
         env:
+          # 从 mainline 目标的缓存加载
           CACHE_FROM: type=gha,scope=${{ env.CACHE_GHA_SCOPE }}-mainline
 
+
+  # 测试作业：运行功能测试
   test:
+    # 运行环境：Ubuntu 24.04
     runs-on: ubuntu-24.04
+    # 依赖：必须在 prepare 作业完成后才能运行
     needs:
       - prepare
+    # 策略配置
     strategy:
+      # 不快速失败
       fail-fast: false
+      # 矩阵配置：定义多个测试目标
       matrix:
         target:
-          - mainline
-          - buildkit
-          - desktop
+          - mainline    # 主线版本
+          - buildkit    # Buildkit 专用版本
+          - desktop     # 桌面环境版本
     steps:
+      # 步骤1：检出代码
       -
         name: Checkout
         uses: actions/checkout@v5
+      # 步骤2：设置 Docker Buildx
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      # 步骤3：测试 buildkit 目标
       -
         name: Test buildkit
         if: matrix.target == 'buildkit'
@@ -100,6 +145,7 @@ jobs:
           targets: buildkit-test
           set: |
             *.cache-from=type=gha,scope=${{ env.CACHE_GHA_SCOPE }}-${{ matrix.target }}
+      # 步骤4：加载 mainline 镜像用于测试
       -
         name: Load mainline for testing
         if: matrix.target == 'mainline'
@@ -111,51 +157,69 @@ jobs:
           set: |
             *.cache-from=type=gha,scope=${{ env.CACHE_GHA_SCOPE }}-${{ matrix.target }}
             mainline.tags=tonistiigi/binfmt:test
+      # 步骤5：测试 mainline 功能
       -
         name: Test mainline
         if: matrix.target == 'mainline'
         run: |
+          # 卸载所有 QEMU 模拟器
           docker run --rm --privileged tonistiigi/binfmt:test --uninstall qemu-*
+          # 安装所有 QEMU 模拟器
           docker run --rm --privileged tonistiigi/binfmt:test --install all
+          # 测试不同架构的容器运行
           docker run --rm --platform linux/arm64 alpine uname -a
           docker run --rm --platform linux/arm/v7 alpine uname -a
           docker run --rm --platform linux/ppc64le alpine uname -a
           docker run --rm --platform linux/s390x alpine uname -a
           docker run --rm --platform linux/riscv64 alpine uname -a
           docker run --rm --platform linux/loong64 registry.alpinelinux.org/img/alpine uname -a
+          # 测试 Ubuntu 不同架构的包管理
           docker run --rm --platform linux/s390x ubuntu apt update
           docker run --rm --platform linux/ppc64le ubuntu apt update
           docker run --rm --platform linux/arm64 ubuntu apt update
+      # 步骤6：测试系统调用
       -
         name: Test Syscalls
         if: matrix.target == 'mainline'
         run: |
           set -x
+          # 构建并测试多个架构的系统调用支持
           docker buildx build --platform=linux/amd64,linux/arm64,linux/386,linux/arm,linux/ppc64le,linux/s390x --target=run --allow security.insecure --build-arg CONFIG_RT_GROUP_SCHED=false ./test
 
+
+  # 端到端测试作业：测试实际应用场景
   e2e:
+    # 运行环境：Ubuntu 24.04
     runs-on: ubuntu-24.04
+    # 依赖：必须在 prepare 作业完成后才能运行
     needs:
       - prepare
+    # 策略配置
     strategy:
+      # 不快速失败
       fail-fast: false
+      # 矩阵配置：定义测试场景
       matrix:
         target:
-          - mainline
-          - desktop
+          - mainline    # 主线版本
+          - desktop     # 桌面环境版本
         dockerfile:
-          - pip-youtube-dl
-          - webpack
+          - pip-youtube-dl    # Python pip + youtube-dl 测试
+          - webpack           # Webpack 构建测试
         platform:
-          - linux/arm/v7
+          - linux/arm/v7      # ARM v7 架构
+        # 包含额外的测试配置
         include:
+          # mainline 目标的 libc-bin 测试
           - target: mainline
             dockerfile: libc-bin
             platform: linux/arm64
+          # desktop 目标的 tini 测试
           - target: desktop
             dockerfile: tini
             platform: linux/arm64
             run_args: --rm
+          # desktop 目标的 postgis 测试
           - target: desktop
             dockerfile: postgis
             platform: linux/arm64
@@ -163,14 +227,19 @@ jobs:
             logs_ctn_name: postgis
             logs_check: "UTC [1] LOG:  database system is ready to accept connections"
     steps:
-      - name: Prepare
+      # 步骤1：准备测试环境
+      -
+        name: Prepare
         run: |
+          # 如果启用了调试模式，设置 QEMU_STRACE 环境变量
           if [ "$RUNNER_DEBUG" = "1" ]; then
             echo "QEMU_STRACE=1" >> $GITHUB_ENV
           fi
+      # 步骤2：检出代码
       -
         name: Checkout
         uses: actions/checkout@v5
+      # 步骤3：加载测试镜像
       -
         name: Load for testing
         uses: docker/bake-action@v6
@@ -181,31 +250,39 @@ jobs:
           set: |
             *.cache-from=type=gha,scope=${{ env.CACHE_GHA_SCOPE }}-${{ matrix.target }}
             *.tags=tonistiigi/binfmt:test
+      # 步骤4：设置 QEMU
       -
         name: Set up QEMU
         run: |
+          # 卸载所有 QEMU 模拟器
           docker run --privileged --rm tonistiigi/binfmt --uninstall qemu-*
+          # 安装所有 QEMU 模拟器
           docker run --rm --privileged tonistiigi/binfmt:test --install all
+      # 步骤5：设置 Docker Buildx
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      # 步骤6：构建测试（仅缓存）
       -
         name: Test
         working-directory: test/dockerfiles/${{ matrix.dockerfile }}
         run: |
           docker buildx build --build-arg QEMU_STRACE --platform ${{ matrix.platform }} --output type=cacheonly .
+      # 步骤7：加载镜像（如果需要）
       -
         name: Load image
         if: ${{ matrix.run_args != '' }}
         working-directory: test/dockerfiles/${{ matrix.dockerfile }}
         run: |
           docker buildx build --build-arg QEMU_STRACE --platform ${{ matrix.platform }} -t ${{ matrix.dockerfile }}:local --load .
+      # 步骤8：运行容器（如果需要）
       -
         name: Run
         if: ${{ matrix.run_args != '' }}
         working-directory: test/dockerfiles/${{ matrix.dockerfile }}
         run: |
           docker run ${{ matrix.run_args }} --env QEMU_STRACE --platform ${{ matrix.platform }} ${{ matrix.dockerfile }}:local
+      # 步骤9：检查容器日志（如果需要）
       -
         name: Check container logs
         if: ${{ matrix.logs_ctn_name != '' && matrix.logs_check != '' }}
@@ -215,20 +292,30 @@ jobs:
           log_check: ${{ matrix.logs_check }}
           timeout: 120
 
+
+  # 构建作业：调用可重用工作流进行构建
   build:
+    # 使用可重用工作流
     uses: ./.github/workflows/.build.yml
+    # 继承所有密钥
     secrets: inherit
+    # 依赖：必须在 validate、test 和 e2e 作业完成后才能运行
     needs:
       - validate
       - test
       - e2e
+    # 策略配置
     strategy:
+      # 不快速失败
       fail-fast: false
+      # 矩阵配置：定义多个构建目标
       matrix:
         target:
-          - mainline
-          - buildkit
-          - desktop
+          - mainline    # 主线版本
+          - buildkit    # Buildkit 专用版本
+          - desktop     # 桌面环境版本
+    # 传递参数给可重用工作流
     with:
       target: ${{ matrix.target }}
+      # 如果是拉取请求，则只进行试运行（不实际推送）
       dry-run: ${{ github.event_name == 'pull_request' }}

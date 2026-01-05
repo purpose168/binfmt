@@ -5,24 +5,24 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/tonistiigi/binfmt?style=flat-square)](https://goreportcard.com/report/github.com/tonistiigi/binfmt)
 [![Docker Pulls](https://img.shields.io/docker/pulls/tonistiigi/binfmt.svg?style=flat-square&logo=docker)](https://hub.docker.com/r/tonistiigi/binfmt/)
 
-Cross-platform emulator collection distributed with Docker images.
+跨平台模拟器集合，通过 Docker 镜像分发。
 
-## Build local binaries
+## 构建本地二进制文件
 
 ```bash
 docker buildx bake
 ```
 
-This builds the qemu-user emulator binaries for your local plaform to the `bin` directory.
+此命令将为您的本地平台构建 qemu-user 模拟器二进制文件到 `bin` 目录。
 
-## Build test image
+## 构建测试镜像
 
 ```bash
 REPO=myuser/binfmt docker buildx bake --load mainline
 docker run --privileged --rm myuser/binfmt
 ```
 
-Prints similar to:
+输出类似于：
 
 ```
 {
@@ -47,14 +47,14 @@ Prints similar to:
 }
 ```
 
-## Installing emulators
+## 安装模拟器
 
 ```bash
 docker run --privileged --rm tonistiigi/binfmt --install all
 docker run --privileged --rm tonistiigi/binfmt --install arm64,riscv64,arm
 ```
 
-## Installing emulators from Docker-Compose
+## 从 Docker-Compose 安装模拟器
 
 ```docker
 version: "3"
@@ -67,23 +67,23 @@ services:
     network_mode: bridge
     restart: "no"
 ```
-Only use container `restart-policy` as `no`, otherwise docker will keep restarting the container.
+仅使用容器的 `restart-policy` 为 `no`，否则 Docker 将持续重启容器。
 
-## Uninstalling emulators
+## 卸载模拟器
 
 ```bash
 docker run --privileged --rm tonistiigi/binfmt --uninstall qemu-aarch64
 ```
 
-Emulator names can be found from the status output.
+模拟器名称可以从状态输出中找到。
 
-You can also uninstall all archs for a specific emulator:
+您也可以卸载特定模拟器的所有架构：
 
 ```bash
 docker run --privileged --rm tonistiigi/binfmt --uninstall qemu-*
 ```
 
-## Display version
+## 显示版本
 
 ```bash
 docker run --privileged --rm tonistiigi/binfmt --version
@@ -92,23 +92,23 @@ docker run --privileged --rm tonistiigi/binfmt --version
 binfmt/9a44d27 qemu/v6.0.0 go/1.15.11
 ```
 
-## Development commands
+## 开发命令
 
 ```bash
-# validate linter
+# 验证代码格式检查器 (validate linter)
 ./hack/lint
 
-# validate vendored files
+# 验证供应商文件 (validate vendored files)
 ./hack/validate-vendor
 
-# update vendored files
+# 更新供应商文件 (update vendored files)
 ./hack/update-vendor
 
-# test, only run on nodes where you allow emulators to be installed in kernel
+# 测试，仅在允许在内核中安装模拟器的节点上运行 (test, only run on nodes where you allow emulators to be installed in kernel)
 ./hack/install-and-test
 ```
 
-## Test current emulation support
+## 测试当前模拟支持
 
 ```
 docker run --rm --platform linux/arm64 alpine uname -a
@@ -118,12 +118,12 @@ docker run --rm --platform linux/s390x alpine uname -a
 docker run --rm --platform linux/riscv64 alpine uname -a
 ```
 
-## `buildkit` target
+## `buildkit` 目标
 
-This repository also provides helper for BuildKit's automatic emulation support https://github.com/moby/buildkit/pull/1528.
-These binaries are BuildKit specific and should not be installed in kernel with `binfmt_misc`.
+此仓库还为 BuildKit 的自动模拟支持提供帮助器 https://github.com/moby/buildkit/pull/1528。
+这些二进制文件是 BuildKit 专用的，不应使用 `binfmt_misc` 安装到内核中。
 
-## Licenses
+## 许可证
 
-MIT. See `LICENSE` for more details.
-For QEMU see https://wiki.qemu.org/License
+MIT。详见 `LICENSE` 获取更多详细信息。
+关于 QEMU，请参见 https://wiki.qemu.org/License

@@ -1,49 +1,70 @@
+# 发布工作流名称
 name: release
 
+# 工作流触发条件
 on:
+  # 手动触发
   workflow_dispatch:
     inputs:
+      # QEMU 源代码仓库地址
       qemu_repo:
         description: 'QEMU source git repo'
         required: false
         type: string
+      # QEMU Git 引用（标签、分支或提交哈希）
       qemu_ref:
         description: 'QEMU git ref (ie. tag, branch or sha)'
         required: false
         type: string
+      # QEMU 版本号（例如 v5.2.0）
       qemu_version:
         description: 'QEMU version (e.g. v5.2.0)'
         required: true
         type: string
+      # Bake 目标（构建目标）
       target:
         description: 'Bake target'
         required: true
         default: 'mainline'
         type: choice
         options:
-          - mainline
-          - buildkit
-          - desktop
+          - mainline    # 主线版本
+          - buildkit    # Buildkit 专用版本
+          - desktop     # 桌面环境版本
+      # 是否创建 latest 标签
       latest:
         description: 'Create latest tag'
         required: true
         default: false
         type: boolean
+      # 是否为试运行（不实际发布）
       dry-run:
         description: 'Dry run'
         required: false
         default: true
         type: boolean
 
+# 定义工作流中的作业
 jobs:
+  # 发布作业：调用可重用工作流进行发布
   release:
+    # 使用可重用工作流
     uses: ./.github/workflows/.build.yml
+    # 继承所有密钥
     secrets: inherit
+    # 传递参数给可重用工作流
     with:
+      # 构建目标
       target: ${{ inputs.target }}
+      # 标记为发布版本
       release: true
+      # QEMU 仓库地址
       qemu_repo: ${{ inputs.qemu_repo }}
+      # QEMU 引用
       qemu_ref: ${{ inputs.qemu_ref }}
+      # QEMU 版本号
       qemu_version: ${{ inputs.qemu_version }}
+      # 是否标记为最新版本
       latest: ${{ inputs.latest }}
+      # 是否为试运行
       dry-run: ${{ inputs.dry-run }}

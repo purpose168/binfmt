@@ -1,41 +1,98 @@
 #!/usr/bin/env sh
+
+# 导出环境变量，禁用 BuildKit 的默认加载行为
+# BUILDX_NO_DEFAULT_LOAD=true 表示构建后不自动加载镜像到本地
 export BUILDX_NO_DEFAULT_LOAD=true
 
+# 设置 CI 环境变量的默认值为空
+# : 命令是 shell 内置命令，不执行任何操作
+# ${CI=} 表示如果 CI 未设置，则设置为空字符串
+# CI 是持续集成环境的标志变量
 : ${CI=}
+
+# 设置 GitHub Actions 环境变量的默认值为空
+# GITHUB_ACTIONS 用于检测是否在 GitHub Actions 环境中运行
 : ${GITHUB_ACTIONS=}
+
+# 设置缓存来源的默认值为空
+# CACHE_FROM 用于指定构建缓存的来源，可以加速构建过程
 : ${CACHE_FROM=}
+
+# 设置缓存目标的默认值为空
+# CACHE_TO 用于指定构建缓存的保存位置
 : ${CACHE_TO=}
 
+# 初始化进度标志变量为空字符串
+# progressFlag 用于控制构建输出的详细程度
 progressFlag=""
+
+# 检查是否在 CI 环境中运行
+# 如果 CI 变量值为 "true"，则使用详细输出模式
 if [ "$CI" = "true" ]; then
+  # --progress=plain 显示完整的构建输出，不使用进度条
+  # 在 CI 环境中，详细输出有助于调试和日志记录
   progressFlag="--progress=plain"
 fi
 
+# 定义 buildxCmd 函数，用于执行构建命令
+# 这个函数会自动检测可用的构建工具并执行构建
 buildxCmd() {
+  # 检查 docker buildx 命令是否可用
+  # >/dev/null 2>&1 将标准输出和错误输出都重定向到 /dev/null，不显示输出
   if docker buildx version >/dev/null 2>&1; then
+    # 设置调试模式，执行命令前打印命令
     set -x
+    # 使用 docker buildx 执行构建命令
+    # "$@" 传递所有参数给 docker buildx
+    # $progressFlag 添加进度标志
     docker buildx "$@" $progressFlag
+  # 检查独立的 buildx 命令是否可用
   elif buildx version >/dev/null 2>&1; then
+    # 设置调试模式
     set -x
+    # 使用独立的 buildx 执行构建命令
     buildx "$@" $progressFlag
+  # 检查 docker 命令是否可用
   elif docker version >/dev/null 2>&1; then
+    # 设置调试模式
     set -x
+    # 使用 Docker BuildKit 执行构建命令
+    # DOCKER_BUILDKIT=1 启用 BuildKit 构建引擎
     DOCKER_BUILDKIT=1 docker "$@" $progressFlag
+  # 如果以上构建工具都不可用，则报错退出
   else
+    # 输出错误信息到标准错误输出
+    # >&2 将输出重定向到标准错误流
     echo >&2 "ERROR: Please enable DOCKER_BUILDKIT or install standalone buildx"
+    # 以错误码 1 退出脚本
     exit 1
   fi
 }
 
+# 初始化构建标志变量为空字符串
+# setFlags 用于存储额外的构建参数
 setFlags=""
+
+# 检查是否在 GitHub Actions 环境中运行
 if [ "$GITHUB_ACTIONS" = "true" ]; then
+  # 检查是否设置了缓存来源
+  # -n 检查变量是否非空
   if [ -n "$CACHE_FROM" ]; then
+    # 遍历所有缓存来源
+    # for 循环遍历 CACHE_FROM 中的每个值
     for cfrom in $CACHE_FROM; do
+      # 将缓存来源添加到构建标志中
+      # --set=*.cache-from=$cfrom 设置所有目标的缓存来源
+      # * 是通配符，匹配所有构建目标
       setFlags="${setFlags}--set=*.cache-from=$cfrom "
     done
   fi
+  # 检查是否设置了缓存目标
   if [ -n "$CACHE_TO" ]; then
+    # 遍历所有缓存目标
     for cto in $CACHE_TO; do
+      # 将缓存目标添加到构建标志中
+      # --set=*.cache-to=$cto 设置所有目标的缓存目标
       setFlags="${setFlags}--set=*.cache-to=$cto "
     done
   fi

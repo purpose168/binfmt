@@ -1,16 +1,43 @@
 #!/usr/bin/env bash
 
+# 加载工具函数脚本
+# $(dirname $0) 获取当前脚本所在目录
+# util 是工具函数脚本文件，包含构建相关的辅助函数
 . $(dirname $0)/util
+
+# 设置 bash 选项
+# -e 遇到错误立即退出
+# -u 使用未定义的变量时报错
 set -eu
 
+# 创建临时目录用于存储构建输出
+# mktemp -d 创建临时目录
+# -t 指定临时文件名模板
+# binfmt-output.XXXXXXXXXX 是临时目录名模板，XXXXXXXXXX 会被随机字符替换
 output=$(mktemp -d -t binfmt-output.XXXXXXXXXX)
 
+# 使用 BuildKit 构建并更新 vendor 依赖
+# buildxCmd build 使用 BuildKit 构建命令
+# --target "update" 指定构建目标为 update 阶段
+# --output "type=local,dest=$output" 指定输出类型为本地文件，目标目录为临时目录
+# --file "./hack/dockerfiles/vendor.Dockerfile" 指定 Dockerfile 路径
+# . 指定构建上下文为当前目录
 buildxCmd build \
   --target "update" \
   --output "type=local,dest=$output" \
   --file "./hack/dockerfiles/vendor.Dockerfile" \
   .
 
+# 删除现有的 vendor 目录
+# rm -rf 递归强制删除，不提示确认
 rm -rf ./vendor
+
+# 将构建输出的内容复制到当前目录
+# cp -R 递归复制目录及其内容
+# "$output"/* 是临时目录中的所有文件和目录
+# . 是当前目录，即项目根目录
 cp -R "$output"/* .
+
+# 删除临时目录
+# 清理构建过程中创建的临时文件
 rm -rf $output

@@ -1,17 +1,39 @@
 #!/usr/bin/env bash
 
+# 获取第一个命令行参数作为构建目标
+# TARGET 变量存储要构建的目标名称
 TARGET=$1
 
+# 加载工具函数脚本
+# $(dirname $0) 获取当前脚本所在目录
+# util 是工具函数脚本文件，包含构建相关的辅助函数
 . $(dirname $0)/util
+
+# 设置 bash 选项
+# -e 遇到错误立即退出，确保脚本在出现错误时停止执行
 set -e
 
+# 定义 usage 函数，用于显示使用说明
+# 当用户未提供参数或参数无效时调用此函数
 usage() {
+  # 输出使用说明信息到标准输出
   echo "usage: ./hack/warm-cache <target>"
+  # 以错误码 1 退出脚本
   exit 1
 }
 
+# 检查 TARGET 变量是否为空
+# -z 检查字符串长度是否为零
 if [ -z "$TARGET" ]; then
+  # 如果为空，调用 usage 函数显示使用说明
   usage
 fi
 
+# 使用 BuildKit 构建并预热缓存
+# buildxCmd bake 使用 BuildKit 的 bake 命令进行构建
+# $setFlags 传递额外的构建标志（来自 util 脚本，可能包含缓存配置）
+# --set=*.output=type=cacheonly 设置所有目标的输出类型为仅缓存
+# * 是通配符，匹配所有构建目标
+# type=cacheonly 表示只生成缓存，不输出镜像或文件
+# $TARGET 是要构建的目标名称
 buildxCmd bake $setFlags --set=*.output=type=cacheonly $TARGET

@@ -1,14 +1,43 @@
 #!/usr/bin/env bash
 
+# 加载工具函数脚本
+# $(dirname $0) 获取当前脚本所在目录
+# util 是工具函数脚本文件
 . $(dirname $0)/util
+
+# 设置 bash 选项
+# -e 遇到错误立即退出
+# -u 使用未定义的变量时报错
 set -eu
 
+# 构建并加载 Docker 镜像
+# TAG 设置镜像标签，默认值为 test
+# buildxCmd bake 使用 BuildKit 构建镜像
+# $setFlags 传递构建标志
+# --load 将构建的镜像加载到本地 Docker 镜像库
+# mainline 是构建目标名称
 TAG=${TAG:-test} buildxCmd bake $setFlags --load mainline
 
+# 设置 bash 选项
+# -o pipefail 管道命令中任一失败则整个管道失败
+# -x 在执行每个命令前打印该命令（调试模式）
 set -o pipefail -x
+
+# 卸载所有 QEMU 模拟器
+# --rm 容器退出后自动删除
+# --privileged 赋予容器特权，这是 binfmt 注册所必需的
+# tonistiigi/binfmt:${TAG:-test} 要运行的镜像名称和标签
+# --uninstall qemu-* 卸载所有 QEMU 相关的模拟器
 docker run --rm --privileged tonistiigi/binfmt:${TAG:-test} --uninstall qemu-*
+
+# 安装所有支持的架构模拟器
+# --install all 安装所有支持的架构
+# 将结果保存到 status 变量中，返回 JSON 格式的状态信息
 status=$(docker run --rm --privileged tonistiigi/binfmt:${TAG:-test} --install all)
 
+# 验证支持的架构列表
+# jq .supported 提取 JSON 中的 supported 字段
+# grep 检查是否包含指定的架构
 echo $status | jq .supported | grep linux/arm64
 echo $status | jq .supported | grep linux/amd64
 echo $status | jq .supported | grep linux/arm/v7
@@ -17,9 +46,15 @@ echo $status | jq .supported | grep linux/riscv64
 echo $status | jq .supported | grep linux/ppc64le
 echo $status | jq .supported | grep linux/386
 
+# 验证已安装的模拟器列表
+# jq .emulators 提取 JSON 中的 emulators 字段
 echo $status | jq .emulators | grep qemu-riscv64
 echo $status | jq .emulators | grep qemu-arm
 
+# 测试跨平台容器运行
+# --platform 指定目标平台架构
+# alpine 是轻量级 Linux 发行版镜像
+# uname -a 显示系统信息，验证容器是否正确运行
 docker run --rm --platform linux/arm64 alpine uname -a
 docker run --rm --platform linux/arm/v7 alpine uname -a
 docker run --rm --platform linux/ppc64le alpine uname -a
@@ -27,23 +62,41 @@ docker run --rm --platform linux/s390x alpine uname -a
 docker run --rm --platform linux/386 alpine uname -a
 docker run --rm --platform linux/riscv64 alpine uname -a
 
+# 如果当前系统架构不是 x86_64，则退出测试
+# 因为后续测试只在 x86_64 架构上运行
 if [ "$(uname -m)" != "x86_64" ]; then exit 0; fi
 
+# 卸载特定架构的模拟器
+# aarch64,riscv64 是要卸载的架构列表
 status=$(docker run --rm --privileged tonistiigi/binfmt:${TAG:-test} --uninstall aarch64,riscv64)
 
+# 验证卸载后这些架构不再被支持
+# 如果 grep 找到匹配项，说明卸载失败，退出码为 1
 if echo $status | jq .supported | grep linux/arm64; then exit 1; fi
 if echo $status | jq .supported | grep linux/riscv64; then exit 1; fi
+
+# 验证其他架构仍然被支持
 echo $status | jq .supported | grep linux/ppc64le
 echo $status | jq .supported | grep linux/arm/v7
 
+# 验证卸载后的模拟器状态
 echo $status | jq .emulators | grep qemu-arm
 echo $status | jq .emulators | grep qemu-ppc64le
+
+# 验证已卸载的模拟器不再存在
 if echo $status | jq .emulators | grep aarch64; then exit 1; fi
 if echo $status | jq .emulators | grep riscv64; then exit 1; fi
 
+# 验证卸载后无法运行对应架构的容器
+# 2>/dev/null 将错误输出重定向到 /dev/null，避免显示错误信息
+# 如果命令成功执行，说明卸载失败，退出码为 1
 if docker run --rm --platform linux/arm64 alpine uname -a 2>/dev/null; then exit 1; fi
 
+# 重新安装 arm64 架构模拟器
 docker run --rm --privileged tonistiigi/binfmt:${TAG:-test} --install arm64
+
+# 验证 arm64 架构容器可以正常运行
 docker run --rm --platform linux/arm64 alpine uname -a
 
+# 重新安装 riscv64 架构模拟器
 docker run --rm --privileged tonistiigi/binfmt:${TAG:-test} --install riscv64

@@ -1,10 +1,23 @@
+# Dependabot 配置文件版本
+# version: 2 是当前使用的 Dependabot 配置格式版本
 version: 2
+
+# 定义要自动更新的依赖项列表
 updates:
+  # 第一个更新配置：GitHub Actions 工作流依赖
   - package-ecosystem: "github-actions"
+    # 限制同时打开的最大拉取请求数量
+    # 值为 10 表示最多同时打开 10 个依赖更新请求
+    # 避免创建过多的 PR 影响代码审查
     open-pull-requests-limit: 10
+    # 检查依赖的目录路径
+    # "/" 表示从仓库根目录开始检查
     directory: "/"
+    # 定期检查更新的计划配置
     schedule:
+      # 检查间隔：每天检查一次依赖更新
       interval: "daily"
+    # 自动添加到更新 PR 的标签
     labels:
-      - "dependencies"
-      - "bot"
+      - "dependencies"    # 标记为依赖更新
+      - "bot"             # 标记为机器人创建

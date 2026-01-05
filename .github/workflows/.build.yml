@@ -1,40 +1,53 @@
-# reusable workflow
+# 可重用工作流（reusable workflow）
 name: .build
 
+# 工作流触发条件：通过 workflow_call 调用
 on:
   workflow_call:
     inputs:
+      # 目标构建类型（如 mainline、stable 等）
       target:
         type: string
         required: true
+      # 是否为正式发布版本
       release:
         type: boolean
         required: false
         default: false
+      # QEMU 仓库地址（可选，用于覆盖默认仓库）
       qemu_repo:
         type: string
         required: false
+      # QEMU 引用/分支（可选）
       qemu_ref:
         type: string
         required: false
+      # QEMU 版本号（可选）
       qemu_version:
         type: string
         required: false
+      # 是否标记为最新版本
       latest:
         type: boolean
         required: false
         default: false
+      # 是否为试运行（不实际推送）
       dry-run:
         type: boolean
         required: false
         default: true
 
+# 环境变量定义
 env:
+  # Docker 镜像仓库的 slug（用户名/仓库名）
   REPO_SLUG: tonistiigi/binfmt
 
+# 定义作业
 jobs:
+  # 准备构建作业：设置构建参数和版本信息
   prepare-build:
     runs-on: ubuntu-24.04
+    # 输出变量，供后续作业使用
     outputs:
       image_name: ${{ env.REPO_SLUG }}
       qemu_repo: ${{ steps.set.outputs.qemu_repo }}
@@ -43,9 +56,11 @@ jobs:
       tag_prefix: ${{ steps.set.outputs.tag_prefix }}
       git_tag: ${{ steps.set.outputs.git_tag }}
     steps:
+      # 检出代码仓库
       -
         name: Checkout
         uses: actions/checkout@v5
+      # 设置输出变量：解析构建配置并确定版本信息
       -
         name: Set outputs
         id: set
@@ -58,15 +73,18 @@ jobs:
           INPUT_QEMU_VERSION: ${{ inputs.qemu_version }}
         with:
           script: |
+            // 获取输入参数
             const inpGitHubRunNumber = core.getInput('github-run-number');
             const inpTarget = core.getInput('target');
             const inpQemuRepo = core.getInput('qemu_repo');
             const inpQemuRef = core.getInput('qemu_ref');
             const inpQemuVersion = core.getInput('qemu_version');
-            
+
+            // 初始化 QEMU 相关变量
             let qemuRepo = '';
             let qemuRef = '';
             let qemuVersion = '';
+            // 执行 docker buildx bake 命令获取构建配置
             await exec.getExecOutput('docker', ['buildx', 'bake', inpTarget, '--print'], {
               ignoreReturnCode: true,
               silent: true
@@ -74,93 +92,134 @@ jobs:
               if (res.stderr.length > 0 && res.exitCode != 0) {
                 throw new Error(res.stderr);
               }
+              // 解析构建配置 JSON
               const dt = JSON.parse(res.stdout.trim());
               qemuRepo = dt.target[inpTarget].args.QEMU_REPO;
               qemuRef = dt.target[inpTarget].args.QEMU_REF;
               qemuVersion = dt.target[inpTarget].args.QEMU_VERSION;
+              // 如果输入参数指定了 QEMU 仓库，则覆盖默认值
               if (inpQemuRepo !== '') {
                 qemuRepo = inpQemuRepo;
               }
+              // 如果输入参数指定了 QEMU 引用，则覆盖默认值
               if (inpQemuRef !== '') {
                 qemuVersion = inpQemuRef;
                 qemuRef = inpQemuRef;
               }
             });
-            
+
+            // 根据目标类型设置标签前缀和 Git 标签
             let tagPrefix = '';
             let gitTag = '';
             if (inpTarget === 'mainline') {
+              // 主线版本使用 'qemu-' 前缀
               tagPrefix = 'qemu-';
               gitTag = `deploy/${inpQemuVersion}-${inpGitHubRunNumber}`;
             } else {
+              // 其他版本使用目标名称作为前缀
               tagPrefix = `${inpTarget}-`;
               gitTag = `${inpTarget}/${inpQemuVersion}-${inpGitHubRunNumber}`;
             }
-            
+
+            // 设置输出变量
             core.setOutput('qemu_repo', qemuRepo);
             core.setOutput('qemu_ref', qemuRef);
             core.setOutput('qemu_version', qemuVersion);
             core.setOutput('tag_prefix', tagPrefix);
             core.setOutput('git_tag', gitTag);
 
+  # 镜像构建作业：构建并推送 Docker 镜像
   image:
+    # 使用 Docker 的实验性构建器工作流
     uses: docker/github-builder-experimental/.github/workflows/bake.yml@af87571fd3347a8a760e6053efba57325c00b74b
     needs:
       - prepare-build
+    # 权限设置
     permissions:
-      contents: read # same as global permission
-      id-token: write # for signing attestation(s) with GitHub OIDC Token
+      contents: read # 与全局权限相同
+      id-token: write # 使用 GitHub OIDC Token 签名证明
     with:
+      # 设置 QEMU 模拟器以支持跨平台构建
       setup-qemu: true
+      # 构建目标：所有架构的镜像
       target: ${{ inputs.target }}-all
+      # 输出类型：镜像
       output: image
+      # 是否推送镜像（非试运行时推送）
       push: ${{ ! inputs.dry-run }}
+      # 设置构建参数
       set: |
         *.args.QEMU_REPO=${{ needs.prepare-build.outputs.qemu_repo }}
         *.args.QEMU_VERSION=${{ needs.prepare-build.outputs.qemu_version }}
+      # 设置元数据注释
       set-meta-annotations: true
+      # 镜像名称
       meta-images: |
         ${{ needs.prepare-build.outputs.image_name }}
+      # 镜像标签策略
       meta-tags: |
+        # 非发布版本的主线：使用分支名
         type=ref,event=branch,enable=${{ ! inputs.release && inputs.target == 'mainline' }}
+        # 非发布版本的其他目标：使用目标名称前缀 + 分支名
         type=ref,event=branch,prefix=${{ inputs.target }}-,enable=${{ ! inputs.release && inputs.target != 'mainline' }}
+        # 非发布版本的主线：使用 PR 号
         type=ref,event=pr,enable=${{ ! inputs.release && inputs.target == 'mainline' }}
+        # 非发布版本的其他目标：使用目标名称前缀 + PR 号
         type=ref,event=pr,prefix=${{ inputs.target }}-,enable=${{ ! inputs.release && inputs.target != 'mainline' }}
+        # 发布版本：使用版本号 + 运行号
         type=raw,value=${{ needs.prepare-build.outputs.tag_prefix }}${{ needs.prepare-build.outputs.qemu_version }}-${{ github.run_number }},enable=${{ inputs.release }}
+        # 发布版本：使用版本号
         type=raw,value=${{ needs.prepare-build.outputs.tag_prefix }}${{ needs.prepare-build.outputs.qemu_version }},enable=${{ inputs.release }}
+        # 发布版本的非主线目标：标记为最新
         type=raw,value=${{ needs.prepare-build.outputs.tag_prefix }}latest,enable=${{ inputs.release && inputs.target != 'mainline' && inputs.latest }}
+        # 发布版本的主线目标：标记为最新
         type=raw,value=latest,enable=${{ inputs.release && inputs.target == 'mainline' && inputs.latest }}
+      # 元数据风味设置
       meta-flavor: |
         latest=false
+      # 镜像元数据注释
       meta-annotations: |
         org.opencontainers.image.title=Binfmt
         org.opencontainers.image.description=Cross-platform emulator collection distributed with Docker images
+      # 元数据烘焙目标
       meta-bake-target: meta-helper
+    # 密钥配置
     secrets:
+      # Docker Hub 认证信息
       registry-auths: |
         - registry: docker.io
           username: ${{ secrets.DOCKERIO_USERNAME }}
           password: ${{ secrets.DOCKERIO_PASSWORD }}
 
+  # QEMU 归档作业：创建 QEMU 二进制文件的归档
   qemu-archive:
     uses: docker/github-builder-experimental/.github/workflows/bake.yml@af87571fd3347a8a760e6053efba57325c00b74b
+    # 仅在主线目标时运行
     if: inputs.target == 'mainline'
     permissions:
-      contents: read # same as global permission
-      id-token: write # for signing attestation(s) with GitHub OIDC Token
+      contents: read # 与全局权限相同
+      id-token: write # 使用 GitHub OIDC Token 签名证明
     with:
+      # 设置 QEMU 模拟器
       setup-qemu: true
+      # 构件名称
       artifact-name: qemu-archive
+      # 上传构件
       artifact-upload: true
+      # 构建目标：所有架构的 QEMU 归档
       target: build-archive-all
+      # 输出类型：本地
       output: local
+      # 是否签名（非试运行时签名）
       sign: ${{ ! inputs.dry-run }}
 
+  # QEMU 归档最终化作业：处理并重新上传 QEMU 归档构件
   qemu-archive-finalize:
     runs-on: ubuntu-24.04
     needs:
       - qemu-archive
     steps:
+      # 下载构建构件
       -
         name: Download artifacts
         uses: actions/download-artifact@v6
@@ -168,27 +227,36 @@ jobs:
           path: /tmp/buildx-output
           pattern: ${{ needs.qemu-archive.outputs.artifact-name }}*
           merge-multiple: true
+      # 重命名证明文件和 SBOM 文件
       -
         name: Rename provenance and sbom
         run: |
+          # 遍历所有输出目录
           for pdir in /tmp/buildx-output/*/; do
             (
               cd "$pdir"
+              # 查找 QEMU 二进制文件名
               binname=$(find . -name 'qemu_*')
+              # 提取文件名（去掉扩展名）
               filename=$(basename "$binname" | sed -E 's/\.(tar\.gz|zip)$//')
+              # 重命名证明文件
               mv "provenance.json" "${filename}.provenance.json"
+              # 如果存在 Sigstore 证明文件，也进行重命名
               if [ -f "provenance.sigstore.json" ]; then
                 mv "provenance.sigstore.json" "${filename}.provenance.sigstore.json"
               fi
             )
           done
+          # 创建最终构件目录并移动文件
           mkdir -p /tmp/qemu-artifacts
           mv /tmp/buildx-output/**/* /tmp/qemu-artifacts
+      # 列出所有构件
       -
         name: List artifacts
         working-directory: /tmp/qemu-artifacts
         run: |
           tree -nh .
+      # 上传 QEMU 归档发布构件
       -
         name: Upload qemu archives release
         uses: actions/upload-artifact@v5
@@ -197,25 +265,35 @@ jobs:
           path: /tmp/qemu-artifacts/*
           if-no-files-found: error
 
+  # binfmt 归档作业：创建 binfmt 二进制文件的归档
   binfmt-archive:
     uses: docker/github-builder-experimental/.github/workflows/bake.yml@af87571fd3347a8a760e6053efba57325c00b74b
+    # 仅在主线目标时运行
     if: inputs.target == 'mainline'
     permissions:
-      contents: read # same as global permission
-      id-token: write # for signing attestation(s) with GitHub OIDC Token
+      contents: read # 与全局权限相同
+      id-token: write # 使用 GitHub OIDC Token 签名证明
     with:
+      # 设置 QEMU 模拟器
       setup-qemu: true
+      # 构件名称
       artifact-name: binfmt-archive
+      # 上传构件
       artifact-upload: true
+      # 构建目标：所有架构的 binfmt 归档
       target: binfmt-archive-all
+      # 输出类型：本地
       output: local
+      # 是否签名（非试运行时签名）
       sign: ${{ ! inputs.dry-run }}
 
+  # binfmt 归档最终化作业：处理并重新上传 binfmt 归档构件
   binfmt-archive-finalize:
     runs-on: ubuntu-24.04
     needs:
       - binfmt-archive
     steps:
+      # 下载构建构件
       -
         name: Download artifacts
         uses: actions/download-artifact@v6
@@ -223,27 +301,36 @@ jobs:
           path: /tmp/buildx-output
           pattern: ${{ needs.binfmt-archive.outputs.artifact-name }}*
           merge-multiple: true
+      # 重命名证明文件和 SBOM 文件
       -
         name: Rename provenance and sbom
         run: |
+          # 遍历所有输出目录
           for pdir in /tmp/buildx-output/*/; do
             (
               cd "$pdir"
+              # 查找 binfmt 二进制文件名
               binname=$(find . -name 'binfmt_*')
+              # 提取文件名（去掉扩展名）
               filename=$(basename "$binname" | sed -E 's/\.(tar\.gz|zip)$//')
+              # 重命名证明文件
               mv "provenance.json" "${filename}.provenance.json"
+              # 如果存在 Sigstore 证明文件，也进行重命名
               if [ -f "provenance.sigstore.json" ]; then
                 mv "provenance.sigstore.json" "${filename}.provenance.sigstore.json"
               fi
             )
           done
+          # 创建最终构件目录并移动文件
           mkdir -p /tmp/binfmt-artifacts
           mv /tmp/buildx-output/**/* /tmp/binfmt-artifacts
+      # 列出所有构件
       -
         name: List artifacts
         working-directory: /tmp/binfmt-artifacts
         run: |
           tree -nh .
+      # 上传 binfmt 归档发布构件
       -
         name: Upload binfmt archives release
         uses: actions/upload-artifact@v5
@@ -252,8 +339,10 @@ jobs:
           path: /tmp/binfmt-artifacts/*
           if-no-files-found: error
 
+  # 发布作业：创建 GitHub Release
   release:
     runs-on: ubuntu-24.04
+    # 无论前面的作业成功或失败都运行
     if: always()
     needs:
       - prepare-build
@@ -261,6 +350,7 @@ jobs:
       - qemu-archive-finalize
       - binfmt-archive-finalize
     steps:
+      # 下载归档发布构件（仅主线目标）
       -
         name: Download archives releases
         if: inputs.target == 'mainline'
@@ -269,12 +359,14 @@ jobs:
           pattern: release-*
           merge-multiple: true
           path: ${{ runner.temp }}/artifacts
+      # 列出所有构件
       -
         name: List artifacts
         if: inputs.target == 'mainline'
         working-directory: ${{ runner.temp }}/artifacts
         run: |
           tree -nh .
+      # 准备发布信息
       -
         name: Prepare
         id: prepare
@@ -283,27 +375,39 @@ jobs:
           INPUT_META-JSON: ${{ needs.image.outputs.meta-json }}
         with:
           script: |
+            // 解析镜像元数据 JSON
             const inpMetaJSON = JSON.parse(core.getInput('meta-json'));
+            // 获取第一个镜像标签
             const imageTag = inpMetaJSON['tag-names'][0];
             core.setOutput('image_tag', imageTag);
+      # 创建 GitHub Release
       -
         name: Create Release
         uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090  # v2.4.1
+        # 仅在正式发布且非试运行时创建
         if: ${{ inputs.release && ! inputs.dry-run }}
         with:
+          # Release 名称
           name: ${{ needs.prepare-build.outputs.git_tag }}
+          # Git 标签名
           tag_name: ${{ needs.prepare-build.outputs.git_tag }}
+          # 是否为预发布版本（latest 为 false 时标记为预发布）
           prerelease: ${{ ! inputs.latest }}
+          # 附加的文件
           files: ${{ runner.temp }}/artifacts/*
+          # 不匹配文件时不失败
           fail_on_unmatched_files: false
+          # 目标提交 SHA
           target_commitish: ${{ github.sha }}
+          # Release 说明
           body: |
             ```
             docker run --privileged --rm ${{ env.REPO_SLUG }}:${{ steps.prepare.outputs.image_tag }} --uninstall qemu-*
             docker run --privileged --rm ${{ env.REPO_SLUG }}:${{ steps.prepare.outputs.image_tag }} --install all
             ```
-            
+
             * logs: ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}
             * qemu repo: ${{ needs.prepare-build.outputs.qemu_repo }}/tree/${{ needs.prepare-build.outputs.qemu_ref }}
+        # GitHub Token 用于创建 Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

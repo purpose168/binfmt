@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 
+# 加载工具函数脚本
+# $(dirname $0) 获取当前脚本所在目录
+# util 是工具函数脚本文件，包含构建相关的辅助函数
 . $(dirname $0)/util
+
+# 设置 bash 选项
+# -e 遇到错误立即退出，确保脚本在出现错误时停止执行
 set -e
 
+# 使用 BuildKit 构建并运行代码检查
+# buildxCmd build 使用 BuildKit 构建命令
+# --file ./hack/dockerfiles/lint.Dockerfile 指定 Dockerfile 路径
+# . 指定构建上下文为当前目录
+# 这个 Dockerfile 会运行 golangci-lint 对 Go 代码进行静态分析检查
 buildxCmd build --file ./hack/dockerfiles/lint.Dockerfile .
