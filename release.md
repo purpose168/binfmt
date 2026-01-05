@@ -142,3 +142,25 @@ git 发布脚本！以下是详细说明：
 ```bash
 ./release.sh --help
 ```
+
+
+# 继续完成发布流程（推荐）
+```bash
+# 清理备份目录
+rm -rf .release_backup/
+
+# 添加并提交更改
+git add VERSION CHANGELOG.md
+git commit -m "Release v3.0.0
+
+发布 3.0 版本"
+
+# 创建标签
+git tag -a v3.0.0 -m "Release version 3.0.0
+
+发布 3.0 版本"
+
+# 推送到远程
+git push origin master
+git push origin v3.0.0
+```
