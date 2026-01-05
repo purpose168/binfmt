@@ -1,0 +1,354 @@
+# 更新日志
+
+## [2.0.0] - 2026-01-05
+
+### 变更
+
+- feat: 添加完整的git发布脚本和文档
+- ci: 更新 Go 工作流配置并添加中文注释
+- Create go.yml
+- docs: 更新代码注释和文档，完善中文翻译
+- Merge pull request #279 from crazy-max/github-builder
+- ci: update docker github builder to latest
+- split binfmt and qemu archives
+- ci: use docker github builder to build images and binaries
+- Merge pull request #213 from tonistiigi/dependabot/github_actions/docker/bake-action-6
+- ci: use local source for bake
+- Bump docker/bake-action from 5 to 6
+- Merge pull request #273 from tonistiigi/dependabot/github_actions/softprops/action-gh-release-2.4.1
+- build(deps): bump softprops/action-gh-release from 2.4.0 to 2.4.1
+- Merge pull request #225 from crazy-max/binfmt-uninstall-skips
+- Merge pull request #271 from tonistiigi/dependabot/github_actions/softprops/action-gh-release-2.4.0
+- build(deps): bump softprops/action-gh-release from 2.3.3 to 2.4.0
+- Merge pull request #265 from crazy-max/qemu10
+- update qemu to 10.0.4
+- Merge pull request #263 from tonistiigi/dependabot/github_actions/softprops/action-gh-release-2.3.3
+- Merge pull request #262 from tonistiigi/dependabot/github_actions/actions/github-script-8
+- Merge pull request #257 from tonistiigi/dependabot/github_actions/actions/checkout-5
+- Merge pull request #256 from tonistiigi/dependabot/github_actions/actions/download-artifact-5
+- build(deps): bump softprops/action-gh-release from 2.2.2 to 2.3.3
+- build(deps): bump actions/github-script from 7 to 8
+- build(deps): bump actions/checkout from 4 to 5
+- build(deps): bump actions/download-artifact from 4 to 5
+- Merge pull request #247 from tonistiigi/dependabot/github_actions/softprops/action-gh-release-2.2.2
+- build(deps): bump softprops/action-gh-release from 2.2.1 to 2.2.2
+- Merge pull request #244 from crazy-max/e2e-libc-bin
+- e2e: update buildx setup order
+- e2e: libc-bin
+- Merge pull request #243 from Earlopain/bump-qemu
+- Bump qemu to v9.2.2
+- Merge pull request #237 from crazy-max/ci-fix-login
+- ci: move login step right before build
+- Merge pull request #233 from p1-0tr/ps-fix-exe-resolution
+- Merge pull request #236 from crazy-max/rm-ejabberd-test
+- test: remove ejabberd
+- patches: Avoid executable path resolution
+- Merge pull request #216 from p1-0tr/ps-bump-qemu-v9.2.0
+- Drop deprecated qemu configuration flags
+- Prevent meson sanity checks
+- Bump qemu to v9.2.0
+- Support v9.1.2
+- Merge pull request #218 from crazy-max/ci-split-build
+- Merge pull request #228 from crazy-max/test-qemu-strace
+- Merge pull request #227 from crazy-max/fix-submodules
+- Merge pull request #226 from crazy-max/test-mainline-loong64-alpine
+- Merge pull request #224 from crazy-max/buildkit-0.19.0
+- test: enable qemu strace when workflow is in debug mode
+- Merge pull request #214 from tonistiigi/dependabot/github_actions/softprops/action-gh-release-2.2.1
+- Merge pull request #219 from ajbarber/master
+- Merge pull request #223 from crazy-max/fix-mips-masks
+- fix submodules and subprojects download
+- ci(test): switch to alpine for loong64
+- vendor: update buildkit to 0.19.0
+- update to go 1.23
+- binfmt: skip register, status and WSLInterop on uninstall
+- binfmt: fix mips masks
+- revert disable-pie configure flag
+- ci: distribute build across runners
+- Merge pull request #217 from crazy-max/test-fix-webpack
+- test(webpack): pin versions for webpack and webpack-cli
+- Bump softprops/action-gh-release from 2.1.0 to 2.2.1
+- Merge pull request #211 from crazy-max/ci-pin-ubuntu
+- Merge pull request #208 from crazy-max/xx-1.5.0
+- Merge pull request #209 from crazy-max/ci-fix-deprecated-input
+- ci: pin ubuntu to 24.04
+- ci: fix deprecated config input
+- dockerfile: update xx to 1.5.0
+- Merge pull request #207 from crazy-max/test-optin-platform
+- Merge pull request #204 from tonistiigi/dependabot/github_actions/softprops/action-gh-release-2.1.0
+- test: set requested platform and use canonical image
+- Bump softprops/action-gh-release from 2.0.8 to 2.1.0
+- Merge pull request #191 from tonistiigi/dependabot/github_actions/softprops/action-gh-release-2.0.8
+- Bump softprops/action-gh-release from 2.0.6 to 2.0.8
+- Merge pull request #184 from tonistiigi/dependabot/github_actions/softprops/action-gh-release-2.0.6
+- Bump softprops/action-gh-release from 2.0.5 to 2.0.6
+- Merge pull request #132 from UNCode101/patch-2
+- Merge pull request #183 from tonistiigi/dependabot/github_actions/docker/bake-action-5
+- Bump docker/bake-action from 4 to 5
+- Merge pull request #174 from vicamo/for-upstream/match-loong64-arch-name
+- Merge pull request #179 from crazy-max/bump-alpine
+- update alpine to 3.20 and xx to 1.4.0
+- Merge pull request #178 from tonistiigi/dependabot/github_actions/softprops/action-gh-release-2.0.5
+- Bump softprops/action-gh-release from 2.0.4 to 2.0.5
+- Merge pull request #167 from tonistiigi/dependabot/github_actions/softprops/action-gh-release-2
+- Bump softprops/action-gh-release to 2.0.4
+- binfmt: match loong64 arch name to containerd known arches
+- Bump softprops/action-gh-release from 1 to 2
+- Merge pull request #161 from crazy-max/desktop-test-postgres
+- test postgis image
+- Merge pull request #160 from dgageot/pretcode-patch
+- Add patch for docker/for-mac/issues/7172
+- Merge pull request #151 from yzewei/master
+- Merge pull request #159 from crazy-max/fix-release
+- ci: fix binfmt gh release
+- Merge pull request #157 from crazy-max/qemu-8.1.5
+- update qemu to 8.1.5
+- Merge pull request #158 from crazy-max/bump-gha
+- Merge pull request #154 from crazy-max/alpine319
+- update README badges
+- Merge pull request #152 from tonistiigi/dependabot/go_modules/github.com/containerd/containerd-1.7.11
+- chore: dependabot to keep gha up to date
+- ci: update github actions to latest stable
+- Bump github.com/containerd/containerd from 1.7.2 to 1.7.11
+- Merge pull request #156 from tonistiigi/dependabot/go_modules/github.com/moby/buildkit-0.12.5
+- Bump github.com/moby/buildkit from 0.12.3 to 0.12.5
+- add loong 64 support
+- Merge pull request #144 from crazy-max/update-qemu-8.1
+- dockerfile: alpine 3.19
+- update qemu to 8.1.4
+- Merge pull request #134 from crazy-max/e2e-tini
+- add desktop flavor
+- pass SUBREAPER to prctl patch
+- e2e: tini
+- Merge pull request #142 from crazy-max/fix-status-badge
+- Merge pull request #143 from crazy-max/bump-buildkit
+- Merge pull request #141 from crazy-max/bump-go
+- bump github.com/moby/buildkit from v0.10.3 to v0.12.3
+- chore: fix ci status badge
+- update alpine to 3.18
+- update golangci-lint to 1.54.2
+- update go to 1.21
+- Merge pull request #120 from crazy-max/update-qemu
+- dockerfile: update xx to 1.3.0
+- update qemu to 8.0.4
+- test: update shebang-direct test under emulation
+- disable-blobs opt removed
+- fix patches
+- update qemu to 8.0.2
+- fix execve patch
+- fix cpu-max patch
+- update qemu to 7.2
+- Added Docker-Compose Installation Instructions
+- Merge pull request #127 from tonistiigi/dependabot/go_modules/github.com/containerd/containerd-1.6.18
+- Bump github.com/containerd/containerd from 1.6.12 to 1.6.18
+- Merge pull request #121 from crazy-max/update-go
+- Dockerfile: update to alpine 3.17
+- Dockerfile: update golangci-lint to 1.51.1 (go 1.20 support)
+- Dockerfile: update to go 1.20
+- Merge pull request #126 from crazy-max/armv6
+- Dockerfile: update xx to 1.2.1
+- ci: set concurrency check
+- Build linux/arm/v6 images
+- Merge pull request #116 from tonistiigi/dependabot/go_modules/github.com/containerd/containerd-1.6.12
+- Merge pull request #114 from dackroyd/bugfix/fix-execvp-path-handling
+- Bump github.com/containerd/containerd from 1.6.6 to 1.6.12
+- fix execvp PATH handling
+- Merge pull request #108 from zeldin/adaptive-allarch
+- Merge pull request #111 from crazy-max/ci-schedule
+- Merge pull request #110 from crazy-max/qemu-v7.1.0
+- ci: scheduled build to avoid gha cache being evicted
+- lint configure_qemu script
+- update buildkit patches to 7.1
+- update qemu to 7.1
+- add patch config for qemu 7.1
+- prevent error message from being hidden by allArch filtering
+- exclude arches with non-existing binary from allArch
+- Merge pull request #95 from crazy-max/update-buildkit
+- Bump github.com/moby/buildkit from v0.9.2 to v0.10.3
+- Merge pull request #81 from crazy-max/e2e
+- add ejabberd example
+- warm cache for ci
+- move e2e and test to dedicated jobs in ci workflow
+- add pip-youtube-dl
+- e2e tests dockerfiles
+- Merge pull request #94 from crazy-max/update-deps
+- Merge pull request #93 from crazy-max/qemu-v7.0.0
+- QEMU_PATCHES bake var to set arbitrary patches to apply
+- update buildkit patches to 7.0
+- update qemu to 7.0
+- add patch config for qemu 7.0
+- match qemu version <major>.<minor> when applying aports patches
+- Bump github.com/containerd/containerd from 1.5.8 to 1.6.6
+- ci: bump actions
+- go 1.18
+- alpine 3.16
+- update xx to 1.1.1
+- Merge pull request #86 from tonistiigi/tonistiigi/dockerfile-comments
+- Dockerfile: update comments
+- Merge pull request #74 from tonistiigi/qemu-v6.2.0
+- update buildkit patches to 6.2
+- update qemu to 6.2
+- add patch config for qemu 6.2
+- Merge pull request #78 from tonistiigi/argv0-fix
+- enable preserve-argv0 by default on mainline
+- Merge pull request #73 from tonistiigi/sched-v2
+- test: add test for handling invalid sizes
+- patches: update to v4 sched patches
+- Merge pull request #70 from tonistiigi/tonistiigi-patch-sched
+- Merge pull request #71 from tonistiigi/tonistiigi/update-buildkit
+- vendor: update buildkit to v0.9.2
+- add syscall testing with sched tests
+- patches: add patches for supporting sched syscalls
+- Merge pull request #68 from tonistiigi/dependabot/go_modules/github.com/containerd/containerd-1.5.8
+- Bump github.com/containerd/containerd from 1.5.4 to 1.5.8
+- Merge pull request #67 from Juneezee/go1.17
+- refactor: move from io/ioutil to os package
+- build: upgrade to Go 1.17
+- Merge pull request #66 from AkihiroSuda/allow-qemu-prefix
+- Merge pull request #65 from AkihiroSuda/archive-add-binfmt
+- Add $QEMU_BINARY_PREFIX
+- Dockerfile: add `binfmt` binary to the `archive` target
+- Merge pull request #58 from tonistiigi/update-v6.1-patches
+- get musl patches from aports for specific range
+- ci: test more commands when binfmt installed in kernel
+- Merge pull request #61 from crazy-max/fix-ci
+- Use the proper commitish value that determines where the Git tag is created from
+- update patches loading to support v6.1.0 and cpu-max
+- Merge pull request #43 from tonistiigi/alpine-build
+- Merge pull request #54 from tonistiigi/dependabot/go_modules/github.com/containerd/containerd-1.5.4
+- Bump github.com/containerd/containerd from 1.5.2 to 1.5.4
+- allow setting custom qemu targets
+- alpine based building via xx
+- Merge pull request #50 from crazy-max/buildkit-binfmt-6
+- BuildKit binfmt 6.0.0
+- Merge pull request #51 from crazy-max/deps
+- Update deps
+- Merge pull request #49 from crazy-max/typo
+- Fix release workflow (typo)
+- Merge pull request #47 from crazy-max/license
+- Add LICENSE
+- Merge pull request #44 from crazy-max/docker-metadata
+- Merge pull request #42 from crazy-max/artifacts
+- Move to docker/metadata-action
+- Create artifacts on release
+- Merge pull request #41 from crazy-max/update-workflow
+- Merge pull request #40 from tonistiigi/update-go-lint
+- Update release body
+- hack: update lint to 1.39
+- update go to 1.16
+- Merge pull request #33 from crazy-max/qemu-6.0
+- Merge pull request #38 from crazy-max/version
+- Merge pull request #39 from crazy-max/enhance-cache
+- Enhance cache for release workflow
+- Display version flag
+- Merge pull request #37 from crazy-max/official-release-action
+- Use official release action
+- Merge pull request #36 from crazy-max/create-git-tag
+- Create Git tag first
+- Merge pull request #35 from crazy-max/cleanup
+- Cleanup release workflow
+- Merge pull request #34 from crazy-max/fix-git-tag
+- Fix git tag
+- QEMU 6.0.0
+- Merge pull request #32 from crazy-max/handle-prerelease
+- Handle prerelease
+- Merge pull request #31 from crazy-max/fix-latest-cond
+- Fix latest condition
+- Merge pull request #30 from crazy-max/fix-ci-workflow
+- Fix ci workflow
+- Merge pull request #29 from crazy-max/fix-mainline-tag
+- Review tagging strategy
+- Merge pull request #24 from crazy-max/deploy
+- Refactor deployment
+- Merge pull request #22 from crazy-max/unins-glob
+- Uninstall all archs for a specific emulator
+- Merge pull request #26 from wanghuaiqing2010/image_mips
+- fix two bugs for mips64le
+- Merge pull request #25 from tonistiigi/set-pkgversion
+- set pkgversion on configure
+- Merge pull request #23 from crazy-max/fix-i386
+- Fix i386 arch
+- Merge pull request #21 from wanghuaiqing2010/image_mips
+- Merge pull request #20 from wanghuaiqing2010/master
+- add mips64le to image tonistiigi/binfmt
+- update vendor for mips64 and mips64el
+- Merge pull request #19 from wanghuaiqing2010/master
+- Merge pull request #18 from crazy-max/cache-lock
+- add support for mips64el and mips64
+- Fix cache lock
+- Merge pull request #17 from tonistiigi/github-qemu-publish
+- github: install qemu for publish step
+- Merge pull request #16 from tonistiigi/qemu-in-github
+- github: ensure qemu is loaded
+- Merge pull request #15 from tonistiigi/buildkit-test
+- add testing for buildkit helpers
+- Merge pull request #7 from crazy-max/validate
+- Conditional publish job
+- Merge pull request #13 from tonistiigi/buildkit-helper-update
+- update buildkit helper source branch
+- Merge branch 'master' into validate
+- Review ci workflow
+- Merge pull request #5 from crazy-max/qemu-5.2.0
+- Merge pull request #10 from crazy-max/386
+- Merge pull request #12 from tonistiigi/x86-prefix-fix2
+- fix x86 pkg prefix without binary prefix
+- Merge pull request #6 from crazy-max/golangci-lint
+- Merge pull request #11 from tonistiigi/x86-fix
+- Add i386 emulator
+- Merge branch 'master' into golangci-lint
+- fix x86 pkg path
+- Merge pull request #9 from crazy-max/update-deps
+- Go 1.15, BuildKit 0.8.0, containerd 1.4.3
+- Qemu to v5.2.0
+- Switch to golangci-lint
+- Add linux/386
+- Merge pull request #3 from tonistiigi/qemu-update
+- Dockerfile: update qemu to v5.1.0
+- Merge pull request #2 from tonistiigi/gh-update
+- github: update to new actions
+- add dockerignore for faster cache checks
+- bake: set binary prefix for buildkit helper
+- github: deployment branch check fix
+- update readme
+- github: add deploy target
+- add master builds pushing
+- update buildkit-helper source
+- add ci workflow
+- hack: add ci script
+- hack: add test script
+- add bake build targets
+- hack: add linter
+- bake: add binaries target
+- hack: update vendor scripts to buildx only
+- move binfmt to project root
+- vendor: start vendoring dependencies
+- new binfmt installer program
+- Merge pull request #1 from AkihiroSuda/fix-typo
+- fix typo: x86-64 -> x86_64
+- riscv special sauce
+- multi-platform build
+- Merge pull request #21 from carlosedp/riscv64
+- Add support for riscv64
+- Update QEMU v4.1.0 (#19)
+- Jenkins job sign image (#14)
+- Merge pull request #13 from StefanScherer/with-pkgversion
+- Set pkgversion to moby/qemu branch name
+- Merge pull request #12 from StefanScherer/add-manifest-tool
+- Add manifest-tool
+- Merge pull request #11 from zelahi/revert-8-signed-build
+- Revert "[TAR-740] Revert "added flag to disable content trust signing for binfmt image""
+- Merge pull request #6 from StefanScherer/update-qemu-v4.0.0
+- Merge pull request #8 from StefanScherer/signed-build
+- Revert "added flag to disable content trust signing for binfmt image"
+- Update QEMU v4.0.0, cleanup Dockerfile
+- Merge pull request #5 from StefanScherer/fix-jenkins-labels
+- Use Ubuntu 18.04 agent
+- Merge pull request #2 from StefanScherer/add-test-stage
+- Merge pull request #4 from zelahi/disable-content-trust-docker-build
+- added flag to disable content trust signing for binfmt image
+- Merge pull request #3 from StefanScherer/fix-registry
+- Fix registry
+- Add test
+- Merge pull request #1 from StefanScherer/fix-arch-in-readme
+- Fix architecture in README.md
+- Build docker/binfmt v3.1.0
